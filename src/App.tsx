@@ -1,0 +1,118 @@
+import { Toaster as Sonner } from "@/components/ui/sonner";
+import { Toaster } from "@/components/ui/toaster";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { AuthProvider } from "@/contexts/AuthContext";
+import { CurrencyProvider } from "@/contexts/CurrencyContext";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { BrowserRouter, Route, Routes } from "react-router-dom";
+import AIChatRecommender from "./components/AIChatRecommender.tsx";
+import MobileBottomNav from "./components/MobileBottomNav.tsx";
+import ScrollToTop from "./components/ScrollToTop.tsx";
+import AuthCallback from "./pages/AuthCallback.tsx";
+import BecomeHost from "./pages/BecomeHost.tsx";
+import BetaWandererApply from "./pages/BetaWandererApply.tsx";
+import BetaWandererProfile from "./pages/BetaWandererProfile.tsx";
+import BetaWanderers from "./pages/BetaWanderers.tsx";
+import BikeToursDetail from "./pages/BikeToursDetail.tsx";
+import BlogDetail from "./pages/BlogDetail.tsx";
+import Booking from "./pages/Booking.tsx";
+import Community from "./pages/Community.tsx";
+import DestinationDetail from "./pages/DestinationDetail.tsx";
+import Destinations from "./pages/Destinations.tsx";
+import Docs from "./pages/Docs.tsx";
+import ExperienceDetail from "./pages/ExperienceDetail.tsx";
+import Experiences from "./pages/Experiences.tsx";
+import Explore from "./pages/Explore.tsx";
+import Grievances from "./pages/Grievances.tsx";
+import HelpCenter from "./pages/HelpCenter.tsx";
+import HostProfile from "./pages/HostProfile.tsx";
+import HostTrip from "./pages/HostTrip.tsx";
+import Index from "./pages/Index.tsx";
+import Leaderboard from "./pages/Leaderboard.tsx";
+import Membership from "./pages/Membership.tsx";
+import NotFound from "./pages/NotFound.tsx";
+import Referrals from "./pages/Referrals.tsx";
+import ResourceGuide from "./pages/ResourceGuide.tsx";
+import Resources from "./pages/Resources.tsx";
+import Rewards from "./pages/Rewards.tsx";
+import Safety from "./pages/Safety.tsx";
+import Signup from "./pages/Signup.tsx";
+import Terms from "./pages/Terms.tsx";
+import TripDetail from "./pages/TripDetail.tsx";
+import TripLeaderProfile from "./pages/TripLeaderProfile.tsx";
+import Trips from "./pages/Trips.tsx";
+import AdminDashboard from "./pages/dashboard/AdminDashboard.tsx";
+import HostDashboard from "./pages/dashboard/HostDashboard.tsx";
+import TravelerDashboard from "./pages/dashboard/TravelerDashboard.tsx";
+
+const queryClient = new QueryClient();
+
+const App = () => (
+  <QueryClientProvider client={queryClient}>
+    <AuthProvider>
+      <CurrencyProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <ScrollToTop />
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/explore" element={<Explore />} />
+              <Route path="/experiences" element={<Experiences />} />
+              <Route path="/experience/:id" element={<ExperienceDetail />} />
+              <Route path="/host/:id" element={<HostProfile />} />
+              <Route path="/book/:id" element={<Booking />} />
+              <Route path="/become-host" element={<BecomeHost />} />
+              <Route path="/signup" element={<Signup />} />
+              <Route path="/destinations" element={<Destinations />} />
+              <Route
+                path="/destination/:name"
+                element={<DestinationDetail />}
+              />
+              <Route path="/community" element={<Community />} />
+              <Route path="/resources" element={<Resources />} />
+              <Route path="/resource/:slug" element={<ResourceGuide />} />
+              <Route
+                path="/dashboard/traveler"
+                element={<TravelerDashboard />}
+              />
+              <Route path="/dashboard/host" element={<HostDashboard />} />
+              <Route path="/dashboard/admin" element={<AdminDashboard />} />
+              <Route path="/help" element={<HelpCenter />} />
+              <Route path="/safety" element={<Safety />} />
+              <Route path="/terms" element={<Terms />} />
+              <Route path="/docs" element={<Docs />} />
+              <Route path="/host-trip" element={<HostTrip />} />
+              <Route path="/grievances" element={<Grievances />} />
+              <Route path="/bike-tours" element={<BikeToursDetail />} />
+              <Route path="/trips" element={<Trips />} />
+              <Route path="/trip/:id" element={<TripDetail />} />
+              <Route path="/trip-leader/:id" element={<TripLeaderProfile />} />
+              <Route path="/beta-wanderers" element={<BetaWanderers />} />
+              <Route
+                path="/beta-wanderer-apply"
+                element={<BetaWandererApply />}
+              />
+              <Route
+                path="/beta-wanderer/:id"
+                element={<BetaWandererProfile />}
+              />
+              <Route path="/leaderboard" element={<Leaderboard />} />
+              <Route path="/rewards" element={<Rewards />} />
+              <Route path="/blog/:id" element={<BlogDetail />} />
+              <Route path="/membership" element={<Membership />} />
+              <Route path="/auth/callback" element={<AuthCallback />} />
+              <Route path="/referrals" element={<Referrals />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+            <MobileBottomNav />
+            <AIChatRecommender />
+          </BrowserRouter>
+        </TooltipProvider>
+      </CurrencyProvider>
+    </AuthProvider>
+  </QueryClientProvider>
+);
+
+export default App;
