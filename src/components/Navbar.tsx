@@ -23,7 +23,7 @@ import {
   Search,
   X,
 } from "lucide-react";
-import { Suspense, lazy, useEffect, useState } from "react";
+import { Suspense, lazy, useCallback, useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 
 const GlobalSearch = lazy(() => import("@/components/GlobalSearch"));
@@ -37,14 +37,13 @@ const navLinks = [
 ];
 
 const Navbar = () => {
+  const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
 
   const location = useLocation();
   const navigate = useNavigate();
   const isHome = location.pathname === "/";
-
   const { user, userRole, signOut } = useAuth();
   const { toast } = useToast();
 
@@ -53,12 +52,16 @@ const Navbar = () => {
       setScrolled(window.scrollY > 10);
     };
 
-    window.addEventListener("scroll", handleScroll);
+    window.addEventListener("scroll", handleScroll, { passive: true });
 
     return () => {
       window.removeEventListener("scroll", handleScroll);
     };
   }, []);
+
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [location.pathname]);
 
   const dashboardPath =
     userRole === "admin"
@@ -73,11 +76,15 @@ const Navbar = () => {
       }`.toUpperCase()
     : user?.email?.[0]?.toUpperCase() || "U";
 
-  const handleSignOut = async () => {
+  const handleSignOut = useCallback(async () => {
     await signOut();
-    toast({ title: "Signed out successfully" });
+
+    toast({
+      title: "Signed out successfully",
+    });
+
     navigate("/");
-  };
+  }, [signOut, navigate, toast]);
 
   const isActive = (path: string) => location.pathname === path;
 
@@ -98,8 +105,6 @@ const Navbar = () => {
               Travelista
             </span>
           </Link>
-
-          {/* Desktop Nav Links */}
           <div className="hidden lg:flex items-center gap-1">
             {navLinks.map((link) => (
               <Link
@@ -112,10 +117,10 @@ const Navbar = () => {
                 }`}
               >
                 {link.icon && <link.icon className="w-3.5 h-3.5" />}
+
                 {link.label}
               </Link>
             ))}
-
             <Link
               to="/become-host"
               className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
@@ -127,8 +132,6 @@ const Navbar = () => {
               Become a Host
             </Link>
           </div>
-
-          {/* Desktop Right */}
           <div className="hidden lg:flex items-center gap-2">
             <Button
               variant="ghost"
@@ -138,20 +141,16 @@ const Navbar = () => {
             >
               <Search className="h-4 w-4" />
             </Button>
-
             {searchOpen && (
               <Suspense fallback={null}>
                 <GlobalSearch onClose={() => setSearchOpen(false)} />
               </Suspense>
             )}
-
             <ThemeToggle />
             <CurrencySwitcher />
-
             {user ? (
               <div className="flex items-center gap-2">
                 <NotificationPanel />
-
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button
@@ -160,20 +159,16 @@ const Navbar = () => {
                     >
                       <Avatar className="h-7 w-7">
                         <AvatarImage src={user.user_metadata?.avatar_url} />
-
                         <AvatarFallback className="text-xs bg-primary/10 text-primary font-semibold">
                           {userInitials}
                         </AvatarFallback>
                       </Avatar>
-
                       <span className="text-sm font-medium text-foreground hidden xl:block">
                         {user.user_metadata?.first_name || "Account"}
                       </span>
-
                       <ChevronDown className="h-3 w-3 text-muted-foreground" />
                     </Button>
                   </DropdownMenuTrigger>
-
                   <DropdownMenuContent align="end" className="w-56">
                     <DropdownMenuLabel className="font-normal">
                       <div className="flex flex-col gap-1">
@@ -187,14 +182,11 @@ const Navbar = () => {
                         </p>
                       </div>
                     </DropdownMenuLabel>
-
                     <DropdownMenuSeparator />
-
                     <DropdownMenuItem onClick={() => navigate(dashboardPath)}>
                       <LayoutDashboard className="mr-2 h-4 w-4" />
                       Dashboard
                     </DropdownMenuItem>
-
                     <DropdownMenuItem
                       onClick={handleSignOut}
                       className="text-destructive focus:text-destructive"
@@ -221,12 +213,9 @@ const Navbar = () => {
               </div>
             )}
           </div>
-
-          {/* Mobile Button */}
           <div className="flex items-center gap-2 lg:hidden">
             <ThemeToggle />
             <CurrencySwitcher />
-
             <button onClick={() => setMobileOpen(!mobileOpen)} className="p-2">
               {mobileOpen ? (
                 <X className="h-5 w-5" />
@@ -238,14 +227,21 @@ const Navbar = () => {
         </div>
       </div>
 
-      {/* Mobile Menu */}
-
       <AnimatePresence>
         {mobileOpen && (
           <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
+            initial={{
+              opacity: 0,
+              height: 0,
+            }}
+            animate={{
+              opacity: 1,
+              height: "auto",
+            }}
+            exit={{
+              opacity: 0,
+              height: 0,
+            }}
             className="lg:hidden bg-card/95 backdrop-blur-xl border-t border-border"
           >
             <div className="px-4 py-4 space-y-1">
@@ -254,7 +250,6 @@ const Navbar = () => {
                   key={link.to}
                   to={link.to}
                   className="block py-2.5 px-3 text-sm font-medium rounded-lg"
-                  onClick={() => setMobileOpen(false)}
                 >
                   {link.label}
                 </Link>

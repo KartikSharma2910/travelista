@@ -1,3 +1,4 @@
+import ScrollToTop from "@/components/ScrollToTop";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -7,7 +8,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import AIChatRecommender from "./components/AIChatRecommender.tsx";
 import MobileBottomNav from "./components/MobileBottomNav.tsx";
-import ScrollToTop from "./components/ScrollToTop.tsx";
 import AuthCallback from "./pages/AuthCallback.tsx";
 import BecomeHost from "./pages/BecomeHost.tsx";
 import BetaWandererApply from "./pages/BetaWandererApply.tsx";
@@ -44,8 +44,18 @@ import Trips from "./pages/Trips.tsx";
 import AdminDashboard from "./pages/dashboard/AdminDashboard.tsx";
 import HostDashboard from "./pages/dashboard/HostDashboard.tsx";
 import TravelerDashboard from "./pages/dashboard/TravelerDashboard.tsx";
+import ProtectedRoute from "./routes/ProtectedRoutes.tsx";
+import RoleProtectedRoute from "./routes/RoleProtectedRoutes.tsx";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5,
+      retry: 2,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -75,10 +85,34 @@ const App = () => (
               <Route path="/resource/:slug" element={<ResourceGuide />} />
               <Route
                 path="/dashboard/traveler"
-                element={<TravelerDashboard />}
+                element={
+                  <ProtectedRoute>
+                    <RoleProtectedRoute allowedRoles={["traveler"]}>
+                      <TravelerDashboard />
+                    </RoleProtectedRoute>
+                  </ProtectedRoute>
+                }
               />
-              <Route path="/dashboard/host" element={<HostDashboard />} />
-              <Route path="/dashboard/admin" element={<AdminDashboard />} />
+              <Route
+                path="/dashboard/host"
+                element={
+                  <ProtectedRoute>
+                    <RoleProtectedRoute allowedRoles={["host"]}>
+                      <HostDashboard />
+                    </RoleProtectedRoute>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/dashboard/admin"
+                element={
+                  <ProtectedRoute>
+                    <RoleProtectedRoute allowedRoles={["admin"]}>
+                      <AdminDashboard />
+                    </RoleProtectedRoute>
+                  </ProtectedRoute>
+                }
+              />
               <Route path="/help" element={<HelpCenter />} />
               <Route path="/safety" element={<Safety />} />
               <Route path="/terms" element={<Terms />} />

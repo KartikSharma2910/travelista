@@ -1,4 +1,11 @@
-import { ReactNode, createContext, useContext, useState } from "react";
+import {
+  ReactNode,
+  createContext,
+  useContext,
+  useState,
+  useMemo,
+  useCallback,
+} from "react";
 
 export type CurrencyCode = "INR" | "USD" | "EUR" | "GBP";
 
@@ -30,43 +37,62 @@ const CurrencyContext = createContext<CurrencyContextType>(
 export const useCurrency = () => useContext(CurrencyContext);
 
 export const CurrencyProvider = ({ children }: { children: ReactNode }) => {
-  const [currency, setCurrency] = useState<CurrencyCode>(() => {
+  const [currency, setCurrencyState] = useState<CurrencyCode>(() => {
     try {
-      return (
-        (localStorage.getItem("travelista_currency") as CurrencyCode) || "INR"
-      );
+      const stored = localStorage.getItem(
+        "travelista_currency"
+      ) as CurrencyCode;
+
+      return stored || "INR";
     } catch {
       return "INR";
     }
   });
 
-  const handleSet = (c: CurrencyCode) => {
-    setCurrency(c);
-    localStorage.setItem("travelista_currency", c);
-  };
+  const setCurrency = useCallback((c: CurrencyCode) => {
+    setCurrencyState(c);
 
-  const format = (amountInINR: number) => {
-    const converted = amountInINR * rates[currency];
-    if (currency === "INR") {
-      return `₹${converted.toLocaleString("en-IN", {
+    try {
+      localStorage.setItem("travelista_currency", c);
+    } catch (error) {
+      console.error("Currency storage error:", error);
+    }
+  }, []);
+
+  const symbol = useMemo(() => {
+    return symbols[currency];
+  }, [currency]);
+
+  const format = useCallback(
+    (amountInINR: number) => {
+      const converted = amountInINR * rates[currency];
+
+      if (currency === "INR") {
+        return `₹${converted.toLocaleString("en-IN", {
+          maximumFractionDigits: 0,
+        })}`;
+      }
+
+      return `${symbols[currency]}${converted.toLocaleString("en-US", {
+        minimumFractionDigits: 0,
+
         maximumFractionDigits: 0,
       })}`;
-    }
-    return `${symbols[currency]}${converted.toLocaleString("en-US", {
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    })}`;
-  };
+    },
+    [currency]
+  );
+
+  const value = useMemo(() => {
+    return {
+      currency,
+      setCurrency,
+      format,
+      symbol,
+    };
+  }, [currency, setCurrency, format, symbol]);
 
   return (
-    <CurrencyContext.Provider
-      value={{
-        currency,
-        setCurrency: handleSet,
-        format,
-        symbol: symbols[currency],
-      }}
-    >
+    <CurrencyContext.Provider value={value}>
       {children}
     </CurrencyContext.Provider>
   );

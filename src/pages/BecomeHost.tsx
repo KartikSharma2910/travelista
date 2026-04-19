@@ -1,12 +1,12 @@
-import Footer from "@/components/Footer";
-import Navbar from "@/components/Navbar";
+import { useState } from "react";
+import { motion } from "framer-motion";
+import { Check, Upload, Camera, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
 import { useToast } from "@/hooks/use-toast";
-import { motion } from "framer-motion";
-import { ArrowRight, Camera, Check, Upload } from "lucide-react";
-import { useState } from "react";
 
 const steps = [
   "Personal Info",
@@ -38,8 +38,14 @@ const BecomeHost = () => {
     vehicleType: "",
   });
 
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
   const update = (key: string, value: any) =>
-    setForm((prev) => ({ ...prev, [key]: value }));
+    setForm((prev) => ({
+      ...prev,
+      [key]: value,
+    }));
+
   const toggleArray = (key: string, val: string) => {
     const arr = form[key as keyof typeof form] as string[];
     update(
@@ -48,7 +54,140 @@ const BecomeHost = () => {
     );
   };
 
+  const validateStep = () => {
+    const newErrors: Record<string, string> = {};
+
+    if (step === 0) {
+      // Name: required, only letters/spaces, min 2 chars
+      const trimmedName = form.name.trim();
+      if (!trimmedName) {
+        newErrors.name = "Full name is required";
+      } else if (trimmedName.length < 2) {
+        newErrors.name = "Name must be at least 2 characters";
+      } else if (!/^[a-zA-Z\s]+$/.test(trimmedName)) {
+        newErrors.name = "Name can only contain letters and spaces";
+      }
+
+      // Email: required + format
+      const trimmedEmail = form.email.trim();
+      if (!trimmedEmail) {
+        newErrors.email = "Email is required";
+      } else if (
+        !/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(trimmedEmail)
+      ) {
+        newErrors.email = "Please enter a valid email address";
+      }
+
+      // Phone: required + trim + Indian mobile format (10 digits, starts 6–9)
+      const trimmedPhone = form.phone.trim();
+      if (!trimmedPhone) {
+        newErrors.phone = "Phone number is required";
+      } else if (!/^[6-9]\d{9}$/.test(trimmedPhone)) {
+        newErrors.phone = "Enter a valid 10-digit Indian mobile number";
+      }
+
+      // City: required, only letters/spaces, min 2 chars
+      const trimmedCity = form.city.trim();
+      if (!trimmedCity) {
+        newErrors.city = "City is required";
+      } else if (trimmedCity.length < 2) {
+        newErrors.city = "City name must be at least 2 characters";
+      } else if (!/^[a-zA-Z\s]+$/.test(trimmedCity)) {
+        newErrors.city = "City name can only contain letters and spaces";
+      }
+
+      // State: required, only letters/spaces, min 2 chars
+      const trimmedState = form.state.trim();
+      if (!trimmedState) {
+        newErrors.state = "State is required";
+      } else if (trimmedState.length < 2) {
+        newErrors.state = "State name must be at least 2 characters";
+      } else if (!/^[a-zA-Z\s]+$/.test(trimmedState)) {
+        newErrors.state = "State name can only contain letters and spaces";
+      }
+    }
+
+    if (step === 1) {
+      // Services: at least one selected
+      if (form.services.length === 0) {
+        newErrors.services = "Please select at least one service";
+      }
+
+      // Homestay rooms: required, positive integer, max 50
+      if (form.services.includes("Stay")) {
+        const rooms = form.homestayRooms.trim();
+        if (!rooms) {
+          newErrors.homestayRooms = "Number of rooms is required";
+        } else if (!/^\d+$/.test(rooms)) {
+          newErrors.homestayRooms = "Rooms must be a whole number";
+        } else if (parseInt(rooms, 10) <= 0) {
+          newErrors.homestayRooms = "Number of rooms must be at least 1";
+        } else if (parseInt(rooms, 10) > 50) {
+          newErrors.homestayRooms = "Number of rooms cannot exceed 50";
+        }
+      }
+
+      // Vehicle type: required, min 3 chars after trim
+      if (form.services.includes("Transport")) {
+        const vehicle = form.vehicleType.trim();
+        if (!vehicle) {
+          newErrors.vehicleType = "Vehicle type is required";
+        } else if (vehicle.length < 3) {
+          newErrors.vehicleType =
+            "Please enter a valid vehicle name (min 3 characters)";
+        }
+      }
+    }
+
+    if (step === 2) {
+      // Tagline: required, min 10 chars
+      const trimmedTagline = form.tagline.trim();
+      if (!trimmedTagline) {
+        newErrors.tagline = "Tagline is required";
+      } else if (trimmedTagline.length < 10) {
+        newErrors.tagline = "Tagline must be at least 10 characters";
+      }
+
+      // Bio: required, min 50 chars
+      const trimmedBio = form.bio.trim();
+      if (!trimmedBio) {
+        newErrors.bio = "Bio is required";
+      } else if (trimmedBio.length < 50) {
+        newErrors.bio = `Bio is too short — please write at least 50 characters (${trimmedBio.length}/50)`;
+      }
+    }
+
+    if (step === 3) {
+      const price = form.pricePerDay;
+      const priceNum = Number(price);
+
+      if (!price) {
+        newErrors.pricePerDay = "Price per day is required";
+      } else if (isNaN(priceNum) || !isFinite(priceNum)) {
+        newErrors.pricePerDay = "Please enter a valid number";
+      } else if (priceNum <= 0) {
+        newErrors.pricePerDay = "Price must be greater than $0";
+      } else if (priceNum > 9999) {
+        newErrors.pricePerDay = "Price cannot exceed $9,999 per day";
+      }
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const nextStep = () => {
+    if (validateStep()) {
+      setStep(step + 1);
+    }
+  };
+
+  const prevStep = () => {
+    setStep(step - 1);
+  };
+
   const handleSubmit = () => {
+    if (!validateStep()) return;
     setSubmitted(true);
     toast({
       title: "Application Submitted!",
@@ -103,8 +242,6 @@ const BecomeHost = () => {
             hospitality, and local expertise.
           </p>
         </motion.div>
-
-        {/* Step Indicators */}
         <div className="mt-8 flex gap-1">
           {steps.map((s, i) => (
             <div key={s} className="flex-1">
@@ -123,7 +260,6 @@ const BecomeHost = () => {
             </div>
           ))}
         </div>
-
         <motion.div
           key={step}
           initial={{ opacity: 0, x: 20 }}
@@ -145,6 +281,9 @@ const BecomeHost = () => {
                     onChange={(e) => update("name", e.target.value)}
                     placeholder="Your full name"
                   />
+                  {errors.name && (
+                    <p className="text-red-500 text-xs mt-1">{errors.name}</p>
+                  )}
                 </div>
                 <div>
                   <label className="text-sm font-medium text-foreground mb-1 block">
@@ -156,6 +295,9 @@ const BecomeHost = () => {
                     onChange={(e) => update("email", e.target.value)}
                     placeholder="you@example.com"
                   />
+                  {errors.email && (
+                    <p className="text-red-500 text-xs mt-1">{errors.email}</p>
+                  )}
                 </div>
                 <div>
                   <label className="text-sm font-medium text-foreground mb-1 block">
@@ -166,6 +308,9 @@ const BecomeHost = () => {
                     onChange={(e) => update("phone", e.target.value)}
                     placeholder="+91 98765 43210"
                   />
+                  {errors.phone && (
+                    <p className="text-red-500 text-xs mt-1">{errors.phone}</p>
+                  )}
                 </div>
                 <div>
                   <label className="text-sm font-medium text-foreground mb-1 block">
@@ -176,6 +321,9 @@ const BecomeHost = () => {
                     onChange={(e) => update("city", e.target.value)}
                     placeholder="e.g. Jaipur"
                   />
+                  {errors.city && (
+                    <p className="text-red-500 text-xs mt-1">{errors.city}</p>
+                  )}
                 </div>
               </div>
               <div>
@@ -187,6 +335,9 @@ const BecomeHost = () => {
                   onChange={(e) => update("state", e.target.value)}
                   placeholder="e.g. Rajasthan"
                 />
+                {errors.state && (
+                  <p className="text-red-500 text-xs mt-1">{errors.state}</p>
+                )}
               </div>
               <div>
                 <label className="text-sm font-medium text-foreground mb-2 block">
@@ -226,7 +377,6 @@ const BecomeHost = () => {
               </div>
             </div>
           )}
-
           {step === 1 && (
             <div className="space-y-6">
               <h2 className="text-xl font-bold text-foreground">
@@ -275,7 +425,9 @@ const BecomeHost = () => {
                   </button>
                 ))}
               </div>
-
+              {errors.services && (
+                <p className="text-red-500 text-xs mt-1">{errors.services}</p>
+              )}
               {form.services.includes("Stay") && (
                 <div className="p-4 rounded-lg bg-secondary">
                   <h3 className="text-sm font-semibold text-foreground mb-2">
@@ -288,6 +440,11 @@ const BecomeHost = () => {
                       placeholder="Number of rooms"
                     />
                   </div>
+                  {errors.homestayRooms && (
+                    <p className="text-red-500 text-xs mt-1">
+                      {errors.homestayRooms}
+                    </p>
+                  )}
                 </div>
               )}
 
@@ -301,11 +458,15 @@ const BecomeHost = () => {
                     onChange={(e) => update("vehicleType", e.target.value)}
                     placeholder="e.g. Maruti Swift, Toyota Innova"
                   />
+                  {errors.vehicleType && (
+                    <p className="text-red-500 text-xs mt-1">
+                      {errors.vehicleType}
+                    </p>
+                  )}
                 </div>
               )}
             </div>
           )}
-
           {step === 2 && (
             <div className="space-y-4">
               <h2 className="text-xl font-bold text-foreground">
@@ -324,6 +485,9 @@ const BecomeHost = () => {
                 <p className="text-xs text-muted-foreground mt-1">
                   {form.tagline.length}/80 characters
                 </p>
+                {errors.tagline && (
+                  <p className="text-red-500 text-xs mt-1">{errors.tagline}</p>
+                )}
               </div>
               <div>
                 <label className="text-sm font-medium text-foreground mb-1 block">
@@ -339,6 +503,9 @@ const BecomeHost = () => {
                 <p className="text-xs text-muted-foreground mt-1">
                   {form.bio.length}/500 characters
                 </p>
+                {errors.bio && (
+                  <p className="text-red-500 text-xs mt-1">{errors.bio}</p>
+                )}
               </div>
               <div>
                 <label className="text-sm font-medium text-foreground mb-2 block">
@@ -406,6 +573,11 @@ const BecomeHost = () => {
                 <p className="text-xs text-muted-foreground mt-1">
                   Average hosts in India charge $30–$60/day
                 </p>
+                {errors.pricePerDay && (
+                  <p className="text-red-500 text-xs mt-1">
+                    {errors.pricePerDay}
+                  </p>
+                )}
               </div>
               <div className="p-4 rounded-lg bg-secondary">
                 <h3 className="text-sm font-semibold text-foreground mb-2">
@@ -434,12 +606,11 @@ const BecomeHost = () => {
             </div>
           )}
         </motion.div>
-
         <div className="mt-6 flex gap-3">
           {step > 0 && (
             <Button
               variant="outline"
-              onClick={() => setStep(step - 1)}
+              onClick={prevStep}
               className="rounded-full px-6"
             >
               Back
@@ -447,17 +618,19 @@ const BecomeHost = () => {
           )}
           {step < steps.length - 1 ? (
             <Button
-              onClick={() => setStep(step + 1)}
+              onClick={nextStep}
               className="rounded-full bg-primary text-primary-foreground hover:bg-primary/90 px-8 gap-2"
             >
-              Continue <ArrowRight className="w-4 h-4" />
+              Continue
+              <ArrowRight className="w-4 h-4" />
             </Button>
           ) : (
             <Button
               onClick={handleSubmit}
               className="rounded-full bg-primary text-primary-foreground hover:bg-primary/90 px-8 gap-2"
             >
-              Submit Application <Check className="w-4 h-4" />
+              Submit Application
+              <Check className="w-4 h-4" />
             </Button>
           )}
         </div>
