@@ -39,14 +39,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         .select("role")
         .eq("user_id", userId)
         .maybeSingle();
-
       if (error) {
         console.error("Role fetch error:", error);
         setUserRole("traveler");
         return;
       }
 
-      setUserRole(data?.role ?? "traveler");
+      if (!data) {
+        await supabase.from("user_roles").insert({
+          user_id: userId,
+          role: "traveler",
+        });
+        setUserRole("traveler");
+        return;
+      }
+      setUserRole(data.role);
     } catch (err) {
       console.error("Unexpected role error:", err);
       setUserRole("traveler");
@@ -60,9 +67,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const {
           data: { session },
         } = await supabase.auth.getSession();
+
         if (!isMounted) return;
+
         setSession(session);
         setUser(session?.user ?? null);
+
         if (session?.user) {
           await fetchRole(session.user.id);
         }
@@ -100,42 +110,28 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     password: string,
     metadata?: Record<string, any>
   ) => {
-    try {
-      return await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: metadata,
-          emailRedirectTo: window.location.origin,
-        },
-      });
-    } catch (error) {
-      console.error("Signup error:", error);
-      throw error;
-    }
+    return await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: metadata,
+        emailRedirectTo: window.location.origin,
+      },
+    });
   };
 
   const signIn = async (email: string, password: string) => {
-    try {
-      return await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-    } catch (error) {
-      console.error("Login error:", error);
-      throw error;
-    }
+    return await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
   };
 
   const signOut = async () => {
-    try {
-      await supabase.auth.signOut();
-      setUser(null);
-      setSession(null);
-      setUserRole(null);
-    } catch (error) {
-      console.error("Logout error:", error);
-    }
+    await supabase.auth.signOut();
+    setUser(null);
+    setSession(null);
+    setUserRole(null);
   };
 
   return (

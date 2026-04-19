@@ -59,68 +59,137 @@ const Signup = () => {
   ];
 
   const handleSignup = async () => {
-    if (!form.firstName || !form.email || !form.password) {
-      toast({ title: "Please fill required fields", variant: "destructive" });
-      return;
-    }
-    if (form.password.length < 6) {
+    try {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      const phoneRegex = /^[0-9+\-\s]{8,15}$/;
+
+      if (!form.firstName.trim()) {
+        toast({
+          title: "First name required",
+          variant: "destructive",
+        });
+        return;
+      }
+      if (!emailRegex.test(form.email)) {
+        toast({
+          title: "Invalid email",
+          variant: "destructive",
+        });
+        return;
+      }
+      if (form.password.length < 6) {
+        toast({
+          title: "Password must be at least 6 characters",
+          variant: "destructive",
+        });
+        return;
+      }
+      if (form.phone) {
+        if (!phoneRegex.test(form.phone)) {
+          toast({
+            title: "Invalid phone number",
+            variant: "destructive",
+          });
+          return;
+        }
+      }
+      if (!form.travelStyle.length) {
+        toast({
+          title: "Select travel style",
+          variant: "destructive",
+        });
+        return;
+      }
+      if (!form.interests.length) {
+        toast({
+          title: "Select interests",
+          variant: "destructive",
+        });
+        return;
+      }
+      if (!form.agreeTerms) {
+        toast({
+          title: "Accept terms first",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setLoading(true);
+
+      const { data, error } = await supabase.auth.signUp({
+        email: form.email.trim(),
+        password: form.password,
+        options: {
+          emailRedirectTo: window.location.origin,
+        },
+      });
+
+      if (error) throw error;
+      const user = data.user;
+
+      if (!user) {
+        throw new Error("User creation failed");
+      }
+
+      const { error: profileError } = await supabase.from("profiles").insert({
+        id: user.id,
+        first_name: form.firstName.trim(),
+        last_name: form.lastName.trim(),
+        email: form.email.trim(),
+        phone: form.phone.trim(),
+        nationality: form.nationality.trim(),
+        travel_styles: form.travelStyle,
+        interests: form.interests,
+      });
+
+      if (profileError) throw profileError;
+
+      const { error: roleError } = await supabase.from("user_roles").insert({
+        user_id: user.id,
+        role: "traveler",
+      });
+      if (roleError) throw roleError;
       toast({
-        title: "Password must be at least 6 characters",
+        title: "Account created! 📧",
+        description: "Check email to verify.",
+      });
+    } catch (err: any) {
+      toast({
+        title: err.message || "Signup failed",
         variant: "destructive",
       });
-      return;
-    }
-    if (!form.agreeTerms) {
-      toast({ title: "Please agree to terms", variant: "destructive" });
-      return;
-    }
-    setLoading(true);
-    const { error } = await supabase.auth.signUp({
-      email: form.email,
-      password: form.password,
-      options: {
-        data: {
-          first_name: form.firstName,
-          last_name: form.lastName,
-          phone: form.phone,
-          nationality: form.nationality,
-          travel_styles: form.travelStyle,
-          interests: form.interests,
-        },
-        emailRedirectTo: window.location.origin,
-      },
-    });
-    setLoading(false);
-    if (error) {
-      toast({ title: error.message, variant: "destructive" });
-    } else {
-      toast({
-        title: "Check your email! 📧",
-        description:
-          "We've sent you a verification link to confirm your account.",
-      });
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleLogin = async () => {
-    if (!form.email || !form.password) {
+    try {
+      if (!form.email.trim() || !form.password.trim()) {
+        toast({
+          title: "Email & password required",
+          variant: "destructive",
+        });
+        return;
+      }
+      setLoading(true);
+      const { error } = await supabase.auth.signInWithPassword({
+        email: form.email.trim(),
+        password: form.password,
+      });
+      if (error) throw error;
       toast({
-        title: "Please enter email and password",
+        title: "Welcome back! 🎉",
+      });
+      navigate("/dashboard/traveler");
+    } catch (err: any) {
+      toast({
+        title: err.message || "Login failed",
         variant: "destructive",
       });
-      return;
-    }
-    setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({
-      email: form.email,
-      password: form.password,
-    });
-    setLoading(false);
-    if (error) {
-      toast({ title: error.message, variant: "destructive" });
-    } else {
-      toast({ title: "Welcome back! 🎉" });
-      navigate("/dashboard/traveler");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -301,7 +370,21 @@ const Signup = () => {
                     />
                   </div>
                   <Button
-                    onClick={() => setStep(2)}
+                    onClick={() => {
+                      if (
+                        !form.firstName.trim() ||
+                        !form.email.trim() ||
+                        !form.password.trim()
+                      ) {
+                        toast({
+                          title: "Please fill required fields",
+                          variant: "destructive",
+                        });
+                        return;
+                      }
+
+                      setStep(2);
+                    }}
                     className="w-full rounded-full bg-primary text-primary-foreground"
                   >
                     Continue
@@ -374,7 +457,20 @@ const Signup = () => {
                       Back
                     </Button>
                     <Button
-                      onClick={() => setStep(3)}
+                      onClick={() => {
+                        if (
+                          !form.travelStyle.length ||
+                          !form.interests.length
+                        ) {
+                          toast({
+                            title: "Select travel style and interests",
+                            variant: "destructive",
+                          });
+                          return;
+                        }
+
+                        setStep(3);
+                      }}
                       className="flex-1 rounded-full bg-primary text-primary-foreground"
                     >
                       Continue

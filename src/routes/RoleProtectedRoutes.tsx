@@ -17,6 +17,10 @@ const RoleProtectedRoute = ({ children, allowedRoles }: Props) => {
     return <Navigate to="/signup" replace />;
   }
 
+  if (!userRole) {
+    return <Navigate to="/" replace />;
+  }
+
   if (!allowedRoles.includes(userRole)) {
     return <Navigate to="/" replace />;
   }
